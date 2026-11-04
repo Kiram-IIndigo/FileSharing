@@ -1,43 +1,65 @@
-// Shared config + API layer.
-// Set USE_MOCK = false and point API_BASE at your colleague's backend.
-// Expected endpoints (adjust to match the backend):
-//   GET  {API_BASE}/galleries/:code  -> { title, date, subtitle, photos: [{ id, url, full }] }
-//   POST {API_BASE}/galleries        -> multipart: title, client, files[]  => { code, link }
-const CONFIG = { API_BASE: '/api', USE_MOCK: true };
-
+// API layer. Endpoints are documented in /DOCS.md (section 3).
+// Admin routes need the session cookie (same origin, so it is sent automatically).
 const api = {
-  async getGallery(code) {
-    if (CONFIG.USE_MOCK) {
-      if (!code) throw new Error('No access code provided');
-      const photos = Array.from({ length: 18 }, (_, i) => {
-        const h = [800, 1000, 600, 900][i % 4];
-        return {
-          id: i + 1,
-          url: `https://picsum.photos/seed/atelier${i}/700/${h}`,
-          full: `https://picsum.photos/seed/atelier${i}/2000/${h * 3}`
-        };
-      });
-      return { title: 'Sample Gallery', date: 'Demo', subtitle: `${photos.length} photographs`, photos };
+  async req(method, url, body) {
+    const opt = { method, headers: {} };
+    if (body !== undefined) {
+      opt.headers['Content-Type'] = 'application/json';
+      opt.body = JSON.stringify(body);
     }
-    const res = await fetch(`${CONFIG.API_BASE}/galleries/${encodeURIComponent(code)}`);
-    if (!res.ok) throw new Error('Gallery not found');
-    return res.json();
+    const res = await fetch(url, opt);
+    if (res.status === 204) return null;
+    let data = null;
+    try { data = await res.json(); } catch (_) {}
+    if (!res.ok) {
+      const err = new Error((data && data.error) || `Request failed (${res.status})`);
+      err.status = res.status;
+      throw err;
+    }
+    return data;
   },
 
-  async createGallery(title, client, files) {
-    if (CONFIG.USE_MOCK) {
-      const code = Math.random().toString(36).slice(2, 8).toUpperCase();
-      return { code, link: `${location.origin}${location.pathname.replace('admin.html', '')}gallery.html?code=${code}` };
-    }
-    const fd = new FormData();
-    fd.append('title', title);
-    fd.append('client', client);
-    files.forEach(f => fd.append('files', f));
-    const res = await fetch(`${CONFIG.API_BASE}/galleries`, { method: 'POST', body: fd });
-    if (!res.ok) throw new Error('Upload failed');
-    return res.json();
-  }
-};
+  // auth
+  login: password => api.req('POST', '/api/login', { password }),
+  logout: () => api.req('POST', '/api/logout'),
+  me: () => api.req('GET', '/api/me'),
 
-const yearEl = document.getElementById('year');
-if (yearEl) yearEl.textContent = new Date().getFullYear();
+  // admin: albums
+  albums: () => api.req('GET', '/api/admin/albums'),
+  album: id => api.req('GET', `/api/admin/albums/${id}`),
+  createAlbum: title => api.req('POST', '/api/admin/albums', { title }),
+  renameAlbum: (id, title) => api.req('PATCH', `/api/admin/albums/${id}`, { title }),
+  deleteAlbum: id => api.req('DELETE', `/api/admin/albums/${id}`),
+  newLink: id => api.req('POST', `/api/admin/albums/${id}/link`),
+
+  // admin: photos
+  reorder: (id, photo_ids) => api.req('PUT', `/api/admin/albums/${id}/order`, { photo_ids }),
+  deletePhoto: id => api.req('DELETE', `/api/admin/photos/${id}`),
+  // One multipart request, field name "files". The server stops at the first bad file.
+  upload(id, files, onProgress) {
+    return new Promise((resolve, reject) => {
+      const fd = new FormData();
+      files.forEach(f => fd.append('files', f));
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `/api/admin/albums/${id}/photos`);
+      xhr.upload.onprogress = e => e.lengthComputable && onProgress && onProgress(e.loaded / e.total);
+      xhr.onerror = () => reject(new Error('Network error during upload'));
+      xhr.onload = () => {
+        let data = {};
+        try { data = JSON.parse(xhr.responseText); } catch (_) {}
+        if (xhr.status >= 200 && xhr.status < 300) return resolve(data);
+        const err = new Error(data.error || `Upload failed (${xhr.status})`);
+        err.status = xhr.status;
+        err.uploaded = data.uploaded || [];
+        reject(err);
+      };
+      xhr.send(fd);
+    });
+  },
+
+  // client (share link, no login)
+  shared: token => api.req('GET', `/api/a/${encodeURIComponent(token)}`),
+  thumb: (token, id) => `/api/a/${encodeURIComponent(token)}/photos/${id}/thumb`,
+  original: (token, id) => `/api/a/${encodeURIComponent(token)}/photos/${id}`,
+  zip: token => `/api/a/${encodeURIComponent(token)}/zip`
+};

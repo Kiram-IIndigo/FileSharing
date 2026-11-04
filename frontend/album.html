@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Gallery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&family=Syncopate:wght@700&display=swap" rel="stylesheet">
+  <!-- Absolute paths: this page is served at /a/{token} -->
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="dark">
+  <section class="cover" id="cover">
+    <div class="cover-inner">
+      <h1 id="g-title">&nbsp;</h1>
+      <button class="btn outline hidden" id="btn-view">View Gallery</button>
+      <p class="msg hidden" id="g-msg"></p>
+    </div>
+    <div class="brand">iindigo.ph</div>
+  </section>
+
+  <div class="bar hidden" id="bar">
+    <span class="title" id="bar-title"></span>
+    <span class="logo">iindigo.ph</span>
+    <span class="actions">
+      <span class="count hidden" id="count"><b id="sel-count">0</b> selected</span>
+      <button class="link" id="btn-all">Select all</button>
+      <button class="link" id="btn-download">Download all</button>
+    </span>
+  </div>
+
+  <main class="grid" id="grid"></main>
+  <div class="gfoot hidden" id="gfoot">IINDIGO.PH</div>
+
+  <div class="lightbox" id="lb">
+    <button class="lb-btn lb-close" aria-label="Close">&times;</button>
+    <button class="lb-btn lb-prev" aria-label="Previous">&lsaquo;</button>
+    <img id="lb-img" alt="">
+    <button class="lb-btn lb-next" aria-label="Next">&rsaquo;</button>
+    <a class="lb-btn lb-dl" id="lb-dl">Download</a>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script src="/js/album.js"></script>
+</body>
+</html>
