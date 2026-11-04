@@ -5,76 +5,141 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <title>iindigo.ph</title>
+  <!-- Set theme before first paint: saved choice, else the OS setting. -->
+  <script>
+    (() => {
+      let t = null;
+      try { t = localStorage.getItem('theme'); } catch (_) {}
+      if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      document.documentElement.dataset.theme = t;
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&family=Syncopate:wght@700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Syncopate:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/admin.css">
 </head>
 <body>
   <!-- Login -->
-  <main class="enter hidden" id="v-login">
-    <form id="login-form">
-      <div class="logo" style="margin-bottom:2rem">iindigo.ph</div>
-      <div class="access">
-        <input id="password" type="password" placeholder="Password" autocomplete="current-password" required>
-        <button class="btn" type="submit">Log in</button>
+  <main class="login hidden" id="v-login">
+    <div class="card">
+      <div class="card-header">
+        <span class="logo">iindigo.ph</span>
+        <h1 class="card-title">Sign in</h1>
+        <p class="card-desc">Enter the admin password to continue.</p>
       </div>
-      <p class="error hidden" id="login-error"></p>
-    </form>
+      <div class="card-content">
+        <form id="login-form">
+          <label class="label" for="password">Password</label>
+          <input class="input" id="password" type="password" autocomplete="current-password" required>
+          <p class="form-error hidden" id="login-error"></p>
+          <button class="btn btn-primary btn-block" type="submit">Sign in</button>
+        </form>
+      </div>
+    </div>
   </main>
 
-  <!-- Dashboard + album views -->
+  <!-- App -->
   <div class="shell hidden" id="v-app">
-    <aside class="side">
+    <aside class="sidebar">
       <a class="logo" href="#/">iindigo.ph</a>
-      <a class="item active" href="#/">Collections</a>
-      <button class="item" id="btn-logout">Log out</button>
+      <div class="nav-label">Gallery</div>
+      <a class="nav-item active" href="#/"><i data-icon="images"></i><span>Collections</span></a>
+      <div class="sidebar-foot">
+        <button class="nav-item" id="btn-theme" type="button"><i data-icon="moon"></i><span>Dark mode</span></button>
+        <button class="nav-item" id="btn-logout" type="button"><i data-icon="log-out"></i><span>Log out</span></button>
+      </div>
     </aside>
 
     <main class="main">
-      <div id="v-list">
-        <div class="main-head">
-          <h1>Collections</h1>
-          <button class="btn" id="btn-new">New Collection</button>
+      <!-- Collections list -->
+      <section id="v-list">
+        <div class="page-head">
+          <div>
+            <h1>Collections</h1>
+            <p class="lead">Each collection has its own private client link.</p>
+          </div>
+          <button class="btn btn-primary" id="btn-new" type="button"><i data-icon="plus"></i>New collection</button>
         </div>
-        <form class="panel hidden" id="new-form">
-          <div class="field"><label for="new-title">Title</label><input id="new-title" required maxlength="200" placeholder="Collection name"></div>
-          <button class="btn" type="submit">Create</button>
-        </form>
-        <p class="error hidden" id="list-error"></p>
         <div class="cards" id="cards"></div>
-        <p class="empty hidden" id="list-empty">No collections yet.</p>
-      </div>
+        <div class="empty hidden" id="list-empty">
+          <div class="empty-icon"><i data-icon="images"></i></div>
+          <h3>No collections yet</h3>
+          <p class="muted">Create one, upload photos, and send the link to your client.</p>
+          <button class="btn btn-primary" id="btn-new-empty" type="button"><i data-icon="plus"></i>New collection</button>
+        </div>
+      </section>
 
-      <div class="hidden" id="v-album">
-        <a class="back" href="#/">&larr; Collections</a>
-        <div class="main-head">
-          <h1 id="a-title"></h1>
+      <!-- One collection -->
+      <section class="hidden" id="v-album">
+        <a class="btn btn-ghost btn-sm back" href="#/"><i data-icon="arrow-left"></i>Collections</a>
+        <div class="page-head">
+          <div>
+            <h1 id="a-title"></h1>
+            <p class="lead" id="a-count"></p>
+          </div>
           <div class="tools">
-            <button class="btn ghost" id="a-rename">Rename</button>
-            <button class="btn ghost" id="a-add">Add photos</button>
-            <button class="btn ghost danger" id="a-delete">Delete</button>
+            <button class="btn btn-outline" id="a-rename" type="button"><i data-icon="pencil"></i>Rename</button>
+            <button class="btn btn-outline danger" id="a-delete" type="button"><i data-icon="trash"></i>Delete</button>
+            <button class="btn btn-primary" id="a-add" type="button"><i data-icon="upload"></i>Upload photos</button>
           </div>
         </div>
         <input id="a-files" type="file" accept="image/png,image/jpeg" multiple class="hidden">
 
-        <div class="share">
-          <span class="share-label">Client link</span>
-          <input id="a-link" readonly>
-          <button class="btn ghost small" id="a-copy">Copy</button>
-          <button class="btn ghost small" id="a-newlink">New link</button>
+        <div class="stack">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Client link</h2>
+              <p class="card-desc">Anyone with this link can view and download. Make a new link to block the old one.</p>
+            </div>
+            <div class="card-content">
+              <div class="share">
+                <input class="input" id="a-link" readonly aria-label="Client link">
+                <button class="btn btn-outline btn-icon" id="a-copy" type="button" title="Copy link" aria-label="Copy link"><i data-icon="copy"></i></button>
+                <a class="btn btn-outline btn-icon" id="a-open" target="_blank" rel="noopener" title="Open link" aria-label="Open link"><i data-icon="external-link"></i></a>
+                <button class="btn btn-outline" id="a-newlink" type="button"><i data-icon="refresh"></i>New link</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="progress hidden" id="a-progress"><div id="a-bar"></div></div>
+
+          <div class="dropzone" id="a-drop" role="button" tabindex="0">
+            <i data-icon="upload"></i>
+            <div><strong>Click to upload</strong> or drag and drop</div>
+            <div class="muted">PNG or JPEG</div>
+          </div>
         </div>
 
-        <div class="progress hidden" id="a-progress"><div id="a-bar"></div></div>
-        <p class="error hidden" id="a-error"></p>
-
-        <div class="dropzone" id="a-drop">Drop PNG or JPEG photos here, or click to browse</div>
-        <p class="hint hidden" id="a-hint">Drag photos to change the order.</p>
+        <div class="photos-head hidden" id="a-photos-head">
+          <h2 class="card-title">Photos</h2>
+          <span class="muted">Drag to reorder</span>
+        </div>
         <div class="photos" id="a-photos"></div>
-      </div>
+      </section>
     </main>
   </div>
 
+  <!-- Shared dialog, filled by ui.dialog() -->
+  <dialog class="dialog" id="dialog">
+    <form method="dialog" id="dialog-form">
+      <h2 id="dialog-title"></h2>
+      <p id="dialog-desc"></p>
+      <div class="field hidden" id="dialog-field">
+        <label class="label" for="dialog-input" id="dialog-label"></label>
+        <input class="input" id="dialog-input" maxlength="200">
+      </div>
+      <div class="dialog-foot">
+        <button class="btn btn-outline" type="button" id="dialog-cancel">Cancel</button>
+        <button class="btn btn-primary" type="submit" id="dialog-ok"></button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
   <script src="/js/app.js"></script>
+  <script src="/js/ui.js"></script>
   <script src="/js/admin.js"></script>
 </body>
 </html>

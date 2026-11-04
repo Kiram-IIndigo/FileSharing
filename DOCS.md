@@ -125,6 +125,10 @@ Upload rules:
 
 Client link to share = `https://your-domain/a/{token}`
 
+Token = 6 characters, `a-z` and `0-9` (example: `k3x9m2`).
+- Old long links are changed to short ones when the server starts. The new links are printed in the log.
+- Risk: there is no limit on wrong guesses. A bot can find a live link in a few days. If that becomes a problem, ask for a per-IP limit.
+
 ### For frontend people
 
 - Album page file must be named `frontend/album.html`.

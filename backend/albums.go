@@ -165,8 +165,8 @@ func (a *app) regenerateLink(w http.ResponseWriter, r *http.Request) {
 		fail(w, errNotFound)
 		return
 	}
-	tok := newToken()
-	if err := a.exec(`UPDATE albums SET token = ? WHERE id = ?`, tok, id); err != nil {
+	tok, err := withToken(func(tok string) error { return a.exec(`UPDATE albums SET token = ? WHERE id = ?`, tok, id) })
+	if err != nil {
 		fail(w, err)
 		return
 	}

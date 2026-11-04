@@ -16,11 +16,35 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
 	"golang.org/x/crypto/bcrypt"
 )
+
+var tokenRe = regexp.MustCompile(`^[a-z0-9]{6}$`)
+
+// Old long tokens are replaced with short ones when the app starts.
+func TestShortenTokens(t *testing.T) {
+	dir, secret := t.TempDir(), strings.Repeat("s", 32)
+	a, err := newApp(dir, "x", secret)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a.db.Exec(`INSERT INTO albums(title, token, created_at) VALUES ('old', 'aVeryLongOld_Token-1234567890', 0)`)
+	a.db.Close()
+
+	a, err = newApp(dir, "x", secret)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var tok string
+	a.db.QueryRow(`SELECT token FROM albums WHERE title = 'old'`).Scan(&tok)
+	if !tokenRe.MatchString(tok) {
+		t.Fatalf("token not shortened: %q", tok)
+	}
+}
 
 func TestFlow(t *testing.T) {
 	hash, _ := bcrypt.GenerateFromPassword([]byte("pw"), bcrypt.MinCost)
@@ -63,6 +87,9 @@ func TestFlow(t *testing.T) {
 	var al album
 	json.Unmarshal(do("POST", "/api/admin/albums", "application/json", js(`{"title":"Wedding"}`), 201), &al)
 	do("POST", "/api/admin/albums", "application/json", js(`{"title":"  "}`), 400)
+	if !tokenRe.MatchString(al.Token) {
+		t.Fatalf("token %q is not 6 chars a-z0-9", al.Token)
+	}
 
 	// upload: big PNG, JPEG with traversal name, duplicate name
 	var pngBuf, jpgBuf bytes.Buffer
@@ -142,6 +169,9 @@ func TestFlow(t *testing.T) {
 	json.Unmarshal(do("POST", fmt.Sprintf("/api/admin/albums/%d/link", al.ID), "", nil, 200), &nl)
 	do("GET", "/api/a/"+tok, "", nil, 404)
 	do("GET", "/api/a/"+nl.Token, "", nil, 200)
+	if !tokenRe.MatchString(nl.Token) {
+		t.Fatalf("new token %q is not 6 chars a-z0-9", nl.Token)
+	}
 
 	// delete photo, then album: files gone
 	p0 := a.photoPath(photo{ID: ups[0].ID, AlbumID: al.ID, Ext: "png"})
