@@ -1,0 +1,16 @@
+[Unit]
+Description=FileSharing photo albums
+After=network.target
+
+[Service]
+User=filesharing
+WorkingDirectory=/opt/filesharing
+EnvironmentFile=/opt/filesharing/.env
+ExecStart=/opt/filesharing/filesharing
+Restart=on-failure
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/opt/filesharing/data
+
+[Install]
+WantedBy=multi-user.target
