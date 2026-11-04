@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Atelier — Private Photo Delivery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="logo" href="index.html">Atelier<span>.</span></a>
+    <nav class="nav">
+      <a href="index.html" class="active">Home</a>
+      <a href="admin.html">Photographer</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div>
+      <p class="eyebrow">Private Client Galleries</p>
+      <h1>Your moments,<br><em>beautifully delivered.</em></h1>
+      <p>Enter the access code from your photographer to view, select and download your photographs in full resolution.</p>
+      <form class="access" id="access-form">
+        <input id="code" type="text" placeholder="ACCESS CODE" autocomplete="off" required>
+        <button class="btn" type="submit">View</button>
+      </form>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="center">
+      <p class="eyebrow">The Experience</p>
+      <h2>Simple. Private. Elegant.</h2>
+      <hr class="rule">
+    </div>
+    <div class="features">
+      <div class="feature"><h3>Private by design</h3><p>Every gallery is protected by its own access code, shared only with you.</p></div>
+      <div class="feature"><h3>Full resolution</h3><p>Download your favourites or the entire collection, exactly as shot.</p></div>
+      <div class="feature"><h3>Choose your favourites</h3><p>Select the images you love and send your picks back with a click.</p></div>
+    </div>
+  </section>
+
+  <footer>&copy; <span id="year"></span> Atelier Photography</footer>
+  <script src="js/app.js"></script>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+    document.getElementById('access-form').addEventListener('submit', e => {
+      e.preventDefault();
+      const code = document.getElementById('code').value.trim();
+      if (code) location.href = 'gallery.html?code=' + encodeURIComponent(code);
+    });
+  </script>
+</body>
+</html>

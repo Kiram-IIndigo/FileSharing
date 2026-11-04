@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Your Gallery — Atelier</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="logo" href="index.html">Atelier<span>.</span></a>
+    <nav class="nav"><a href="index.html">Home</a><a href="admin.html">Photographer</a></nav>
+  </header>
+
+  <section class="gallery-head">
+    <p class="eyebrow" id="g-date"></p>
+    <h1 id="g-title">Loading…</h1>
+    <hr class="rule" style="margin-inline:auto">
+    <p id="g-sub"></p>
+  </section>
+
+  <div class="toolbar">
+    <span><span class="count" id="sel-count">0</span> selected</span>
+    <span>
+      <button class="btn ghost small" id="btn-all">Select all</button>
+      <button class="btn small" id="btn-download">Download</button>
+    </span>
+  </div>
+
+  <main class="grid" id="grid"></main>
+
+  <div class="lightbox" id="lb">
+    <button class="lb-btn lb-close" aria-label="Close">&times;</button>
+    <button class="lb-btn lb-prev" aria-label="Previous">&lsaquo;</button>
+    <img id="lb-img" alt="">
+    <button class="lb-btn lb-next" aria-label="Next">&rsaquo;</button>
+    <a class="lb-btn lb-dl" id="lb-dl" download>Download</a>
+  </div>
+
+  <footer>&copy; <span id="year"></span> Atelier Photography</footer>
+  <script src="js/app.js"></script>
+  <script src="js/gallery.js"></script>
+</body>
+</html>
