@@ -65,7 +65,11 @@ func newApp(dataDir, pwHash, secret string) (*app, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &app{db: db, dataDir: dataDir, pwHash: []byte(pwHash), secret: []byte(secret), maxUpload: 2048 << 20}, nil
+	a := &app{db: db, dataDir: dataDir, pwHash: []byte(pwHash), secret: []byte(secret), maxUpload: 2048 << 20}
+	if err := a.shortenTokens(); err != nil {
+		return nil, err
+	}
+	return a, nil
 }
 
 func (a *app) routes(frontendDir string) http.Handler {

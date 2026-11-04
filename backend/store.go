@@ -3,8 +3,10 @@ package main
 import (
 	"crypto/rand"
 	"database/sql"
-	"encoding/base64"
 	"errors"
+	"log"
+	"math/big"
+	"strings"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -62,10 +64,64 @@ func openDB(path string) (*sql.DB, error) {
 	return db, nil
 }
 
+const (
+	tokenLen      = 6
+	tokenAlphabet = "abcdefghijklmnopqrstuvwxyz0123456789"
+)
+
+// newToken returns 6 random chars from a-z0-9 (36^6 ≈ 2.2 billion links).
+// ponytail: no rate limit on wrong links (owner's choice); a bot could guess a live link in days. Add per-IP 404 limit if that matters.
 func newToken() string {
-	b := make([]byte, 32)
-	rand.Read(b)
-	return base64.RawURLEncoding.EncodeToString(b)
+	b := make([]byte, tokenLen)
+	for i := range b {
+		n, err := rand.Int(rand.Reader, big.NewInt(int64(len(tokenAlphabet))))
+		if err != nil {
+			panic(err) // crypto/rand never fails on Linux
+		}
+		b[i] = tokenAlphabet[n.Int64()]
+	}
+	return string(b)
+}
+
+// withToken runs fn with fresh tokens until it doesn't hit the UNIQUE constraint (short tokens can collide).
+func withToken(fn func(tok string) error) (string, error) {
+	for range 10 {
+		tok := newToken()
+		err := fn(tok)
+		if err == nil || !strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			return tok, err
+		}
+	}
+	return "", errors.New("could not find a free link token")
+}
+
+// shortenTokens gives every album with an old-format token a new short one. Old links stop working.
+func (a *app) shortenTokens() error {
+	rows, err := a.db.Query(`SELECT id FROM albums WHERE length(token) != ?`, tokenLen)
+	if err != nil {
+		return err
+	}
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			return err
+		}
+		ids = append(ids, id)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	for _, id := range ids {
+		tok, err := withToken(func(tok string) error { return a.exec(`UPDATE albums SET token = ? WHERE id = ?`, tok, id) })
+		if err != nil {
+			return err
+		}
+		log.Printf("album %d: new short link /a/%s", id, tok)
+	}
+	return nil
 }
 
 const albumCols = `a.id, a.title, a.token, a.created_at,
@@ -137,12 +193,17 @@ func (a *app) photoByID(id int64) (photo, error) {
 
 func (a *app) insertAlbum(title string) (album, error) {
 	now := time.Now().Unix()
-	tok := newToken()
-	res, err := a.db.Exec(`INSERT INTO albums(title, token, created_at) VALUES (?, ?, ?)`, title, tok, now)
+	var id int64
+	tok, err := withToken(func(tok string) error {
+		res, err := a.db.Exec(`INSERT INTO albums(title, token, created_at) VALUES (?, ?, ?)`, title, tok, now)
+		if err == nil {
+			id, _ = res.LastInsertId()
+		}
+		return err
+	})
 	if err != nil {
 		return album{}, err
 	}
-	id, _ := res.LastInsertId()
 	return album{ID: id, Title: title, Token: tok, CreatedAt: now, Photos: []photo{}}, nil
 }
 
