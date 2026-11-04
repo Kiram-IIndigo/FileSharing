@@ -95,7 +95,12 @@ func (a *app) routes(frontendDir string) http.Handler {
 		noIndex(w)
 		http.ServeFile(w, r, filepath.Join(frontendDir, "album.html"))
 	})
-	mux.Handle("GET /", http.FileServer(http.Dir(frontendDir)))
+	// no-cache = browser re-checks each time (304 if unchanged), so a deploy shows up without hard refresh.
+	static := http.FileServer(http.Dir(frontendDir))
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-cache")
+		static.ServeHTTP(w, r)
+	})
 	return mux
 }
 
